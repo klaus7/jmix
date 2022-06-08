@@ -1,0 +1,27 @@
+.jmix
+
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**
+!**/src/test/**
+
+### IntelliJ IDEA ###
+.idea/*
+!.idea/encodings.xml
+*.iws
+*.iml
+*.ipr
+out/
+
+### VS Code ###
+.vscode/
+
+### Files are generated/updated by vaadin-gradle-plugin ###
+node_modules/
+webpack.generated.js
+target
+out
+pnpmfile.js
+.npmrc
+frontend/generated
