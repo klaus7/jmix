@@ -1,7 +1,7 @@
 plugins {
-    id 'io.jmix' version '1.1.0-M8'
+    id 'io.jmix' version '1.3.0-M1'
     id 'java'
-    id 'com.vaadin' version '23.0.5'
+    id 'com.vaadin' version '23.1.0'
 }
 
 apply plugin: 'org.springframework.boot'
@@ -16,8 +16,8 @@ version = '${project_version}'
 
 repositories {
     mavenCentral()<%if (project_additionalRepositories) {
-        project_additionalRepositories.each { additionalRepository ->%>
-            ${additionalRepository}<%}}%>
+    project_additionalRepositories.each { additionalRepository ->%>
+${additionalRepository}<%}}%>
 }
 
 dependencies {
