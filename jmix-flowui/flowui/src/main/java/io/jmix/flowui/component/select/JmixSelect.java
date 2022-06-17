@@ -51,6 +51,8 @@ public class JmixSelect<V> extends Select<V> implements SupportsValueSource<V>, 
     protected void initComponent() {
         fieldDelegate = createFieldDelegate();
         optionsDelegate = createOptionsDelegate();
+
+        setItemLabelGenerator(fieldDelegate::applyDefaultValueFormat);
     }
 
     protected FieldDelegate<JmixSelect<V>, V, V> createFieldDelegate() {
