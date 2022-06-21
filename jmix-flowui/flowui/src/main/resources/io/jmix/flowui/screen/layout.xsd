@@ -2229,7 +2229,6 @@
     <xs:complexType name="checkboxGroupComponent">
         <xs:complexContent>
             <xs:extension base="baseComponent">
-                <xs:attribute name="themeName" type="checkboxGroupThemeName"/>
                 <xs:attribute name="optionsContainer" type="xs:string"/>
 
                 <xs:attributeGroup ref="hasSize"/>
@@ -2245,6 +2244,35 @@
         </xs:complexContent>
     </xs:complexType>
 
+    <!-- ListBox-->
+    <xs:complexType name="listBoxComponent">
+        <xs:complexContent>
+            <xs:extension base="baseComponent">
+                <xs:attribute name="optionsContainer" type="xs:string"/>
+                <xs:attribute name="readOnly" type="xs:boolean"/>
+
+                <xs:attributeGroup ref="hasSize"/>
+                <xs:attributeGroup ref="hasEnabled"/>
+                <xs:attributeGroup ref="hasClassName"/>
+                <xs:attributeGroup ref="hasDataContainer"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- MultiSelectListBox-->
+    <xs:complexType name="multiSelectListBoxComponent">
+        <xs:complexContent>
+            <xs:extension base="baseComponent">
+                <xs:attribute name="optionsContainer" type="xs:string"/>
+                <xs:attribute name="readOnly" type="xs:boolean"/>
+
+                <xs:attributeGroup ref="hasSize"/>
+                <xs:attributeGroup ref="hasEnabled"/>
+                <xs:attributeGroup ref="hasClassName"/>
+                <xs:attributeGroup ref="hasDataContainer"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 
     <!-- TextArea-->
     <xs:complexType name="textAreaComponent">
@@ -2745,6 +2773,8 @@
                 <xs:element name="entityComboBox" type="entityComboBoxComponent"/>
                 <xs:element name="radioButtonGroup" type="radioButtonGroupComponent"/>
                 <xs:element name="checkboxGroup" type="checkboxGroupComponent"/>
+                <xs:element name="listBox" type="listBoxComponent"/>
+                <xs:element name="multiSelectListBox" type="multiSelectListBoxComponent"/>
                 <xs:element name="progressBar" type="progressBarComponent"/>
                 <xs:element name="dataGrid" type="dataGridComponent"/>
                 <xs:element name="treeDataGrid" type="treeDataGridComponent"/>

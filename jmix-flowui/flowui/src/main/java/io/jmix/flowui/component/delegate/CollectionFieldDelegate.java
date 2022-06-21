@@ -17,17 +17,24 @@
 package io.jmix.flowui.component.delegate;
 
 import com.vaadin.flow.component.AbstractField;
+import io.jmix.flowui.data.ConversionException;
 import io.jmix.flowui.data.EntityValueSource;
+import io.jmix.flowui.data.Options;
 import io.jmix.flowui.data.ValueSource;
 import io.jmix.flowui.data.binding.impl.AbstractValueBinding;
 import io.jmix.flowui.data.binding.impl.FieldValueBinding;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component("flowui_CollectionFieldDelegate")
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
@@ -51,5 +58,47 @@ public class CollectionFieldDelegate<C extends AbstractField<?, Set<P>>, P, V>
         }
 
         return metadataTools.format(item);
+    }
+
+    @Nullable
+    public Collection<V> convertToModel(Set<V> presentationValue, @Nullable Options<V> options) throws ConversionException {
+        Stream<V> items = options == null ? Stream.empty()
+                : options.getOptions().filter(presentationValue::contains);
+
+        if (getValueSource() != null) {
+            Class<Collection<V>> targetType = getValueSource().getType();
+
+            if (List.class.isAssignableFrom(targetType)) {
+                return items.collect(Collectors.toList());
+            }
+
+            if (Set.class.isAssignableFrom(targetType)) {
+                return items.collect(Collectors.toCollection(LinkedHashSet::new));
+            }
+        }
+
+        return items.collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    public Set<V> convertToPresentation(@Nullable Collection<V> modelValue) {
+        if (modelValue instanceof List) {
+            return new LinkedHashSet<>(modelValue);
+        }
+
+        return modelValue == null ?
+                new LinkedHashSet<>() : new LinkedHashSet<>(modelValue);
+    }
+
+    public boolean equalCollections(@Nullable Collection<V> a, @Nullable Collection<V> b) {
+        if (CollectionUtils.isEmpty(a) && CollectionUtils.isEmpty(b)) {
+            return true;
+        }
+
+        if ((CollectionUtils.isEmpty(a) && CollectionUtils.isNotEmpty(b))
+                || (CollectionUtils.isNotEmpty(a) && CollectionUtils.isEmpty(b))) {
+            return false;
+        }
+
+        return CollectionUtils.isEqualCollection(a, b);
     }
 }

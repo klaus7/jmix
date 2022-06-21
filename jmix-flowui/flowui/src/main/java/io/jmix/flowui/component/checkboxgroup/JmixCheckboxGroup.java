@@ -111,6 +111,21 @@ public class JmixCheckboxGroup<V> extends CheckboxGroup<V> implements
         fieldDelegate.executeValidators();
     }
 
+    @Override
+    protected void validate() {
+        isInvalid();
+    }
+
+    @Override
+    public boolean isInvalid() {
+        return fieldDelegate.isInvalid();
+    }
+
+    @Override
+    public void setInvalid(boolean invalid) {
+        fieldDelegate.setInvalid(invalid);
+    }
+
     @Nullable
     @Override
     public Options<V> getOptions() {
@@ -146,7 +161,7 @@ public class JmixCheckboxGroup<V> extends CheckboxGroup<V> implements
 
     @Override
     public void setTypedValue(@Nullable Collection<V> value) {
-        setValueInternal(value, convertToPresentation(value));
+        setValueInternal(value, fieldDelegate.convertToPresentation(value));
     }
 
     @Override
@@ -157,7 +172,7 @@ public class JmixCheckboxGroup<V> extends CheckboxGroup<V> implements
     protected void setValueInternal(@Nullable Collection<V> modelValue, Set<V> presentationValue) {
         try {
             if (modelValue == null) {
-                modelValue = convertToModel(presentationValue);
+                modelValue = fieldDelegate.convertToModel(presentationValue, optionsDelegate.getOptions());
             }
 
             super.setValue(presentationValue);
@@ -203,9 +218,9 @@ public class JmixCheckboxGroup<V> extends CheckboxGroup<V> implements
 
             Collection<V> value;
             try {
-                value = convertToModel(presValue);
+                value = fieldDelegate.convertToModel(presValue, optionsDelegate.getOptions());
 
-                setValue(convertToPresentation(value));
+                setValue(fieldDelegate.convertToPresentation(value));
             } catch (ConversionException e) {
                 setErrorMessage(e.getLocalizedMessage());
                 setInvalid(true);
@@ -219,11 +234,14 @@ public class JmixCheckboxGroup<V> extends CheckboxGroup<V> implements
                 fireAllValueChangeEvents(value, oldValue, true);
             }
         }
+
+        // update invalid state
+        validate();
     }
 
-    protected void fireTextFieldValueChangeEvent(@Nullable Collection<V> oldValue, boolean isFromClient) {
+    protected void fireCheckboxGroupValueChangeEvent(@Nullable Collection<V> oldValue, boolean isFromClient) {
         ComponentValueChangeEvent<JmixCheckboxGroup<V>, Set<V>> event = new ComponentValueChangeEvent<>(
-                this, this, convertToPresentation(oldValue), isFromClient);
+                this, this, fieldDelegate.convertToPresentation(oldValue), isFromClient);
 
         isVaadinValueChangeEnabled = true;
         fireEvent(event);
@@ -231,7 +249,7 @@ public class JmixCheckboxGroup<V> extends CheckboxGroup<V> implements
     }
 
     protected void fireAllValueChangeEvents(@Nullable Collection<V> value, @Nullable Collection<V> oldValue, boolean isFromClient) {
-        fireTextFieldValueChangeEvent(oldValue, isFromClient);
+        fireCheckboxGroupValueChangeEvent(oldValue, isFromClient);
         fireTypedValueChangeEvent(value, oldValue, isFromClient);
     }
 
@@ -242,7 +260,7 @@ public class JmixCheckboxGroup<V> extends CheckboxGroup<V> implements
         getEventBus().fireEvent(event);
     }
 
-    @Nullable
+    /*@Nullable
     protected Collection<V> convertToModel(Set<V> presentationValue) throws ConversionException {
         Stream<V> items = optionsDelegate.getOptions() == null ? Stream.empty()
                 : optionsDelegate.getOptions().getOptions().filter(presentationValue::contains);
@@ -269,22 +287,9 @@ public class JmixCheckboxGroup<V> extends CheckboxGroup<V> implements
 
         return modelValue == null ?
                 new LinkedHashSet<>() : new LinkedHashSet<>(modelValue);
-    }
+    }*/
 
     protected boolean fieldValueEquals(@Nullable Collection<V> value, @Nullable Collection<V> oldValue) {
-        return equalCollections(value, oldValue);
-    }
-
-    protected boolean equalCollections(@Nullable Collection<V> a, @Nullable Collection<V> b) {
-        if (CollectionUtils.isEmpty(a) && CollectionUtils.isEmpty(b)) {
-            return true;
-        }
-
-        if ((CollectionUtils.isEmpty(a) && CollectionUtils.isNotEmpty(b))
-                || (CollectionUtils.isNotEmpty(a) && CollectionUtils.isEmpty(b))) {
-            return false;
-        }
-
-        return CollectionUtils.isEqualCollection(a, b);
+        return fieldDelegate.equalCollections(value, oldValue);
     }
 }
