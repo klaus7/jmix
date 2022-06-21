@@ -31,7 +31,6 @@ import io.jmix.flowui.data.*;
 import io.jmix.flowui.data.options.ContainerOptions;
 import io.jmix.flowui.exception.ValidationException;
 import io.jmix.flowui.model.CollectionContainer;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -39,8 +38,6 @@ import org.springframework.context.ApplicationContextAware;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class JmixCheckboxGroup<V> extends CheckboxGroup<V> implements
         SupportsTypedValue<JmixCheckboxGroup<V>, ComponentValueChangeEvent<CheckboxGroup<V>, Set<V>>, Collection<V>, Set<V>>,
@@ -259,35 +256,6 @@ public class JmixCheckboxGroup<V> extends CheckboxGroup<V> implements
 
         getEventBus().fireEvent(event);
     }
-
-    /*@Nullable
-    protected Collection<V> convertToModel(Set<V> presentationValue) throws ConversionException {
-        Stream<V> items = optionsDelegate.getOptions() == null ? Stream.empty()
-                : optionsDelegate.getOptions().getOptions().filter(presentationValue::contains);
-
-        if (fieldDelegate.getValueSource() != null) {
-            Class<Collection<V>> targetType = fieldDelegate.getValueSource().getType();
-
-            if (List.class.isAssignableFrom(targetType)) {
-                return items.collect(Collectors.toList());
-            }
-
-            if (Set.class.isAssignableFrom(targetType)) {
-                return items.collect(Collectors.toCollection(LinkedHashSet::new));
-            }
-        }
-
-        return items.collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    protected Set<V> convertToPresentation(@Nullable Collection<V> modelValue) {
-        if (modelValue instanceof List) {
-            return new LinkedHashSet<>(modelValue);
-        }
-
-        return modelValue == null ?
-                new LinkedHashSet<>() : new LinkedHashSet<>(modelValue);
-    }*/
 
     protected boolean fieldValueEquals(@Nullable Collection<V> value, @Nullable Collection<V> oldValue) {
         return fieldDelegate.equalCollections(value, oldValue);
