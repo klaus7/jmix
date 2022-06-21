@@ -57,6 +57,7 @@ public abstract class BaseLoaderConfig {
         loaders.put("integerField", IntegerFieldLoader.class);
         loaders.put("progressBar", ProgressBarLoader.class);
         loaders.put("radioButtonGroup", RadioButtonGroupLoader.class);
+        loaders.put("checkboxGroup", CheckboxGroupLoader.class);
         loaders.put("textArea", TextAreaLoader.class);
         loaders.put("checkbox", CheckboxLoader.class);
         loaders.put("comboBox", ComboBoxLoader.class);

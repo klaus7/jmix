@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package io.jmix.flowui.component.select;
+package io.jmix.flowui.component.radiobuttongroup;
 
-import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.shared.Registration;
 import io.jmix.flowui.component.HasRequired;
 import io.jmix.flowui.component.SupportsValidation;
@@ -34,13 +34,13 @@ import org.springframework.context.ApplicationContextAware;
 
 import javax.annotation.Nullable;
 
-public class JmixSelect<V> extends Select<V> implements SupportsValueSource<V>, HasRequired, SupportsOptions<V>,
-        SupportsOptionsContainer<V>, SupportsValidation<V>, ApplicationContextAware, InitializingBean {
+public class JmixRadioButtonGroup<V> extends RadioButtonGroup<V> implements SupportsValueSource<V>, SupportsOptions<V>,
+        SupportsOptionsContainer<V>, SupportsValidation<V>, HasRequired, ApplicationContextAware, InitializingBean {
 
     protected ApplicationContext applicationContext;
 
-    protected FieldDelegate<JmixSelect<V>, V, V> fieldDelegate;
-    protected ListOptionsDelegate<JmixSelect<V>, V> optionsDelegate;
+    protected FieldDelegate<JmixRadioButtonGroup<V>, V, V> fieldDelegate;
+    protected ListOptionsDelegate<JmixRadioButtonGroup<V>, V> optionsDelegate;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -61,11 +61,11 @@ public class JmixSelect<V> extends Select<V> implements SupportsValueSource<V>, 
         addValueChangeListener(e -> validate());
     }
 
-    protected FieldDelegate<JmixSelect<V>, V, V> createFieldDelegate() {
+    protected FieldDelegate<JmixRadioButtonGroup<V>, V, V> createFieldDelegate() {
         return applicationContext.getBean(FieldDelegate.class, this);
     }
 
-    protected ListOptionsDelegate<JmixSelect<V>, V> createOptionsDelegate() {
+    protected ListOptionsDelegate<JmixRadioButtonGroup<V>, V> createOptionsDelegate() {
         return applicationContext.getBean(ListOptionsDelegate.class, this);
     }
 
@@ -78,6 +78,33 @@ public class JmixSelect<V> extends Select<V> implements SupportsValueSource<V>, 
     @Override
     public void setRequiredMessage(@Nullable String requiredMessage) {
         fieldDelegate.setRequiredMessage(requiredMessage);
+    }
+
+    @Nullable
+    @Override
+    public Options<V> getOptions() {
+        return optionsDelegate.getOptions();
+    }
+
+    @Override
+    public void setOptions(@Nullable Options<V> options) {
+        optionsDelegate.setOptions(options);
+    }
+
+    @Override
+    public void setOptionsContainer(CollectionContainer<V> container) {
+        optionsDelegate.setOptions(new ContainerOptions<>(container));
+    }
+
+    @Nullable
+    @Override
+    public ValueSource<V> getValueSource() {
+        return fieldDelegate.getValueSource();
+    }
+
+    @Override
+    public void setValueSource(@Nullable ValueSource<V> valueSource) {
+        fieldDelegate.setValueSource(valueSource);
     }
 
     @Override
@@ -93,38 +120,6 @@ public class JmixSelect<V> extends Select<V> implements SupportsValueSource<V>, 
     @Override
     public void setInvalid(boolean invalid) {
         fieldDelegate.setInvalid(invalid);
-    }
-
-    @Nullable
-    @Override
-    public ValueSource<V> getValueSource() {
-        return fieldDelegate.getValueSource();
-    }
-
-    @Override
-    public void setValueSource(@Nullable ValueSource<V> valueSource) {
-        fieldDelegate.setValueSource(valueSource);
-    }
-
-    @Nullable
-    @Override
-    public Options<V> getOptions() {
-        return optionsDelegate.getOptions();
-    }
-
-    @Override
-    public void setOptionsContainer(CollectionContainer<V> container) {
-        optionsDelegate.setOptions(new ContainerOptions<>(container));
-    }
-
-    @Override
-    public void setOptions(@Nullable Options<V> options) {
-        optionsDelegate.setOptions(options);
-    }
-
-    @Override
-    public void setRequired(boolean required) {
-        HasRequired.super.setRequired(required);
     }
 
     @Override
