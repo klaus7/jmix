@@ -1989,7 +1989,13 @@
         <xs:complexContent>
             <xs:extension base="baseTextFieldComponent">
                 <xs:attribute name="pattern" type="xs:string"/>
+                <xs:attribute name="maxLength" type="xs:integer"/>
+                <xs:attribute name="minLength" type="xs:integer"/>
+
                 <xs:attribute name="preventInvalidInput" type="xs:boolean"/>
+
+                <xs:attributeGroup ref="hasDataContainer"/>
+                <xs:attributeGroup ref="hasRequired"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

@@ -41,7 +41,7 @@ public class TypedTextField<V> extends TextField
 
     protected ApplicationContext applicationContext;
 
-    protected TextFieldDelegate<V> fieldDelegate;
+    protected TextFieldDelegate<TypedTextField<V>, V> fieldDelegate;
 
     protected V internalValue;
 
@@ -71,7 +71,7 @@ public class TypedTextField<V> extends TextField
     }
 
     @SuppressWarnings("unchecked")
-    protected TextFieldDelegate<V> createFieldDelegate() {
+    protected TextFieldDelegate<TypedTextField<V>, V> createFieldDelegate() {
         return applicationContext.getBean(TextFieldDelegate.class, this);
     }
 

@@ -30,7 +30,11 @@ import java.util.function.Function;
 import static io.jmix.flowui.component.UiComponentUtils.isComponentEnabled;
 import static io.jmix.flowui.component.UiComponentUtils.isComponentVisible;
 
-
+/**
+ * @param <C> component type
+ * @param <T> value source value type
+ * @param <V> component value type
+ */
 public abstract class AbstractFieldDelegate<C extends AbstractField<?, V>, T, V>
         extends AbstractValueComponentDelegate<C, T, V>
         implements ApplicationContextAware {
