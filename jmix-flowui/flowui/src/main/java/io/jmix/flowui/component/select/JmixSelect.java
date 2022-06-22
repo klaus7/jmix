@@ -18,15 +18,18 @@ package io.jmix.flowui.component.select;
 
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.shared.Registration;
 import io.jmix.flowui.component.HasRequired;
 import io.jmix.flowui.component.delegate.DataViewDelegate;
 import io.jmix.flowui.component.SupportsValidation;
 import io.jmix.flowui.component.delegate.FieldDelegate;
+import io.jmix.flowui.component.validation.Validator;
 import io.jmix.flowui.data.SupportsDataProvider;
 import io.jmix.flowui.data.SupportsItemsContainer;
 import io.jmix.flowui.data.SupportsValueSource;
 import io.jmix.flowui.data.ValueSource;
 import io.jmix.flowui.data.items.ContainerDataProvider;
+import io.jmix.flowui.exception.ValidationException;
 import io.jmix.flowui.model.CollectionContainer;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;

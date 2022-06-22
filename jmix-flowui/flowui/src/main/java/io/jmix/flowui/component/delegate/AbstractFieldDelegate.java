@@ -221,7 +221,7 @@ public abstract class AbstractFieldDelegate<C extends AbstractField<?, V>, T, V>
 
     protected void setComponentRequiredErrorState() {
         // Error message is placed under the component
-        // so there is no need to get a label form the field
+        // so there is no need to get a label from the field
         String errorMessage = getRequiredMessage();
         if (Strings.isNullOrEmpty(errorMessage)) {
             errorMessage = getMessage("validationFail.defaultRequiredMessage");

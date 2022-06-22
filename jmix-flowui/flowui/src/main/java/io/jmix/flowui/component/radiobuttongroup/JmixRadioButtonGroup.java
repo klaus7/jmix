@@ -17,14 +17,15 @@
 package io.jmix.flowui.component.radiobuttongroup;
 
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.shared.Registration;
 import io.jmix.flowui.component.HasRequired;
 import io.jmix.flowui.component.SupportsValidation;
+import io.jmix.flowui.component.delegate.DataViewDelegate;
 import io.jmix.flowui.component.delegate.FieldDelegate;
-import io.jmix.flowui.component.delegate.ListOptionsDelegate;
 import io.jmix.flowui.component.validation.Validator;
 import io.jmix.flowui.data.*;
-import io.jmix.flowui.data.options.ContainerOptions;
+import io.jmix.flowui.data.items.ContainerDataProvider;
 import io.jmix.flowui.exception.ValidationException;
 import io.jmix.flowui.model.CollectionContainer;
 import org.springframework.beans.BeansException;
@@ -34,13 +35,13 @@ import org.springframework.context.ApplicationContextAware;
 
 import javax.annotation.Nullable;
 
-public class JmixRadioButtonGroup<V> extends RadioButtonGroup<V> implements SupportsValueSource<V>, SupportsOptions<V>,
-        SupportsOptionsContainer<V>, SupportsValidation<V>, HasRequired, ApplicationContextAware, InitializingBean {
+public class JmixRadioButtonGroup<V> extends RadioButtonGroup<V> implements SupportsValueSource<V>, SupportsDataProvider<V>,
+        SupportsItemsContainer<V>, SupportsValidation<V>, HasRequired, ApplicationContextAware, InitializingBean {
 
     protected ApplicationContext applicationContext;
 
     protected FieldDelegate<JmixRadioButtonGroup<V>, V, V> fieldDelegate;
-    protected ListOptionsDelegate<JmixRadioButtonGroup<V>, V> optionsDelegate;
+    protected DataViewDelegate<JmixRadioButtonGroup<V>, V> dataViewDelegate;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -54,19 +55,11 @@ public class JmixRadioButtonGroup<V> extends RadioButtonGroup<V> implements Supp
 
     protected void initComponent() {
         fieldDelegate = createFieldDelegate();
-        optionsDelegate = createOptionsDelegate();
+        dataViewDelegate = createDataViewDelegate();
 
         setItemLabelGenerator(fieldDelegate::applyDefaultValueFormat);
 
         addValueChangeListener(e -> validate());
-    }
-
-    protected FieldDelegate<JmixRadioButtonGroup<V>, V, V> createFieldDelegate() {
-        return applicationContext.getBean(FieldDelegate.class, this);
-    }
-
-    protected ListOptionsDelegate<JmixRadioButtonGroup<V>, V> createOptionsDelegate() {
-        return applicationContext.getBean(ListOptionsDelegate.class, this);
     }
 
     @Nullable
@@ -80,20 +73,18 @@ public class JmixRadioButtonGroup<V> extends RadioButtonGroup<V> implements Supp
         fieldDelegate.setRequiredMessage(requiredMessage);
     }
 
-    @Nullable
     @Override
-    public Options<V> getOptions() {
-        return optionsDelegate.getOptions();
+    public void setItems(CollectionContainer<V> container) {
+        setItems(new ContainerDataProvider<>(container));
     }
 
     @Override
-    public void setOptions(@Nullable Options<V> options) {
-        optionsDelegate.setOptions(options);
-    }
-
-    @Override
-    public void setOptionsContainer(CollectionContainer<V> container) {
-        optionsDelegate.setOptions(new ContainerOptions<>(container));
+    public void setDataProvider(DataProvider<V, ?> dataProvider) {
+        // Method is called from a constructor so bean can be null
+        if (dataViewDelegate != null) {
+            dataViewDelegate.bind(dataProvider);
+        }
+        super.setDataProvider(dataProvider);
     }
 
     @Nullable
@@ -130,5 +121,13 @@ public class JmixRadioButtonGroup<V> extends RadioButtonGroup<V> implements Supp
     @Override
     public void executeValidators() throws ValidationException {
         fieldDelegate.executeValidators();
+    }
+
+    protected FieldDelegate<JmixRadioButtonGroup<V>, V, V> createFieldDelegate() {
+        return applicationContext.getBean(FieldDelegate.class, this);
+    }
+
+    protected DataViewDelegate<JmixRadioButtonGroup<V>, V> createDataViewDelegate() {
+        return applicationContext.getBean(DataViewDelegate.class, this);
     }
 }

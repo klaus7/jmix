@@ -17,10 +17,10 @@
 package io.jmix.flowui.component.listbox;
 
 import com.vaadin.flow.component.listbox.ListBox;
+import io.jmix.flowui.component.delegate.DataViewDelegate;
 import io.jmix.flowui.component.delegate.FieldDelegate;
-import io.jmix.flowui.component.delegate.ListOptionsDelegate;
 import io.jmix.flowui.data.*;
-import io.jmix.flowui.data.options.ContainerOptions;
+import io.jmix.flowui.data.items.ContainerDataProvider;
 import io.jmix.flowui.model.CollectionContainer;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -29,13 +29,13 @@ import org.springframework.context.ApplicationContextAware;
 
 import javax.annotation.Nullable;
 
-public class JmixListBox<V> extends ListBox<V> implements SupportsValueSource<V>, SupportsOptions<V>,
-        SupportsOptionsContainer<V>, ApplicationContextAware, InitializingBean {
+public class JmixListBox<V> extends ListBox<V> implements SupportsValueSource<V>, SupportsDataProvider<V>,
+        SupportsItemsContainer<V>, ApplicationContextAware, InitializingBean {
 
     protected ApplicationContext applicationContext;
 
     protected FieldDelegate<JmixListBox<V>, V, V> fieldDelegate;
-    protected ListOptionsDelegate<JmixListBox<V>, V> optionsDelegate;
+    protected DataViewDelegate<JmixListBox<V>, V> dataViewDelegate;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -49,33 +49,14 @@ public class JmixListBox<V> extends ListBox<V> implements SupportsValueSource<V>
 
     protected void initComponent() {
         fieldDelegate = createFieldDelegate();
-        optionsDelegate = createOptionsDelegate();
+        dataViewDelegate = createOptionsDelegate();
 
         setItemLabelGenerator(fieldDelegate::applyDefaultValueFormat);
     }
 
-    protected FieldDelegate<JmixListBox<V>, V, V> createFieldDelegate() {
-        return applicationContext.getBean(FieldDelegate.class, this);
-    }
-
-    protected ListOptionsDelegate<JmixListBox<V>, V> createOptionsDelegate() {
-        return applicationContext.getBean(ListOptionsDelegate.class, this);
-    }
-
-    @Nullable
     @Override
-    public Options<V> getOptions() {
-        return optionsDelegate.getOptions();
-    }
-
-    @Override
-    public void setOptions(@Nullable Options<V> options) {
-        optionsDelegate.setOptions(options);
-    }
-
-    @Override
-    public void setOptionsContainer(CollectionContainer<V> container) {
-        optionsDelegate.setOptions(new ContainerOptions<>(container));
+    public void setItems(CollectionContainer<V> container) {
+        setItems(new ContainerDataProvider<>(container));
     }
 
     @Nullable
@@ -87,5 +68,13 @@ public class JmixListBox<V> extends ListBox<V> implements SupportsValueSource<V>
     @Override
     public void setValueSource(@Nullable ValueSource<V> valueSource) {
         fieldDelegate.setValueSource(valueSource);
+    }
+
+    protected FieldDelegate<JmixListBox<V>, V, V> createFieldDelegate() {
+        return applicationContext.getBean(FieldDelegate.class, this);
+    }
+
+    protected DataViewDelegate<JmixListBox<V>, V> createOptionsDelegate() {
+        return applicationContext.getBean(DataViewDelegate.class, this);
     }
 }

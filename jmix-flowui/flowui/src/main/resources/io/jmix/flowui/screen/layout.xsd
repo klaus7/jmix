@@ -2216,7 +2216,7 @@
         <xs:complexContent>
             <xs:extension base="baseComponent">
                 <xs:attribute name="themeName" type="radioButtonGroupThemeName"/>
-                <xs:attribute name="optionsContainer" type="xs:string"/>
+                <xs:attribute name="itemsContainer" type="xs:string"/>
 
                 <xs:attributeGroup ref="hasSize"/>
                 <xs:attributeGroup ref="hasLabel"/>
@@ -2235,7 +2235,7 @@
     <xs:complexType name="checkboxGroupComponent">
         <xs:complexContent>
             <xs:extension base="baseComponent">
-                <xs:attribute name="optionsContainer" type="xs:string"/>
+                <xs:attribute name="itemsContainer" type="xs:string"/>
 
                 <xs:attributeGroup ref="hasSize"/>
                 <xs:attributeGroup ref="hasLabel"/>
@@ -2254,7 +2254,7 @@
     <xs:complexType name="listBoxComponent">
         <xs:complexContent>
             <xs:extension base="baseComponent">
-                <xs:attribute name="optionsContainer" type="xs:string"/>
+                <xs:attribute name="itemsContainer" type="xs:string"/>
                 <xs:attribute name="readOnly" type="xs:boolean"/>
 
                 <xs:attributeGroup ref="hasSize"/>
@@ -2269,7 +2269,7 @@
     <xs:complexType name="multiSelectListBoxComponent">
         <xs:complexContent>
             <xs:extension base="baseComponent">
-                <xs:attribute name="optionsContainer" type="xs:string"/>
+                <xs:attribute name="itemsContainer" type="xs:string"/>
                 <xs:attribute name="readOnly" type="xs:boolean"/>
 
                 <xs:attributeGroup ref="hasSize"/>

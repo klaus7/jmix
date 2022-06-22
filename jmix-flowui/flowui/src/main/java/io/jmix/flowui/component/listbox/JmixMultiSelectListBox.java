@@ -20,12 +20,13 @@ import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.listbox.MultiSelectListBox;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.shared.Registration;
 import io.jmix.flowui.component.SupportsTypedValue;
 import io.jmix.flowui.component.delegate.CollectionFieldDelegate;
-import io.jmix.flowui.component.delegate.ListOptionsDelegate;
+import io.jmix.flowui.component.delegate.DataViewDelegate;
 import io.jmix.flowui.data.*;
-import io.jmix.flowui.data.options.ContainerOptions;
+import io.jmix.flowui.data.items.ContainerDataProvider;
 import io.jmix.flowui.model.CollectionContainer;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -38,12 +39,12 @@ import java.util.Set;
 
 public class JmixMultiSelectListBox<V> extends MultiSelectListBox<V> implements SupportsValueSource<Collection<V>>,
         SupportsTypedValue<JmixMultiSelectListBox<V>, ComponentValueChangeEvent<MultiSelectListBox<V>, Set<V>>, Collection<V>, Set<V>>,
-        SupportsOptions<V>, SupportsOptionsContainer<V>, ApplicationContextAware, InitializingBean {
+        SupportsDataProvider<V>, SupportsItemsContainer<V>, ApplicationContextAware, InitializingBean {
 
     protected ApplicationContext applicationContext;
 
     protected CollectionFieldDelegate<JmixMultiSelectListBox<V>, V, V> fieldDelegate;
-    protected ListOptionsDelegate<JmixMultiSelectListBox<V>, V> optionsDelegate;
+    protected DataViewDelegate<JmixMultiSelectListBox<V>, V> dataViewDelegate;
 
     protected Collection<V> internalValue;
 
@@ -67,19 +68,11 @@ public class JmixMultiSelectListBox<V> extends MultiSelectListBox<V> implements 
 
     protected void initComponent() {
         fieldDelegate = createFieldDelegate();
-        optionsDelegate = createOptionsDelegate();
+        dataViewDelegate = createDataViewDelegate();
 
         setItemLabelGenerator(fieldDelegate::applyDefaultCollectionItemFormat);
 
         attachValueChangeListener();
-    }
-
-    protected CollectionFieldDelegate<JmixMultiSelectListBox<V>, V, V> createFieldDelegate() {
-        return applicationContext.getBean(CollectionFieldDelegate.class, this);
-    }
-
-    protected ListOptionsDelegate<JmixMultiSelectListBox<V>, V> createOptionsDelegate() {
-        return applicationContext.getBean(ListOptionsDelegate.class, this);
     }
 
     @Nullable
@@ -101,7 +94,7 @@ public class JmixMultiSelectListBox<V> extends MultiSelectListBox<V> implements 
     protected void setValueInternal(@Nullable Collection<V> modelValue, Set<V> presentationValue) {
         try {
             if (modelValue == null) {
-                modelValue = fieldDelegate.convertToModel(presentationValue, optionsDelegate.getOptions());
+                modelValue = fieldDelegate.convertToModel(presentationValue, getDataProvider().fetch(new Query<>()));
             }
 
             super.setValue(presentationValue);
@@ -122,20 +115,9 @@ public class JmixMultiSelectListBox<V> extends MultiSelectListBox<V> implements 
         return getEventBus().addListener(TypedValueChangeEvent.class, (ComponentEventListener) listener);
     }
 
-    @Nullable
     @Override
-    public Options<V> getOptions() {
-        return optionsDelegate.getOptions();
-    }
-
-    @Override
-    public void setOptions(@Nullable Options<V> options) {
-        optionsDelegate.setOptions(options);
-    }
-
-    @Override
-    public void setOptionsContainer(CollectionContainer<V> container) {
-        optionsDelegate.setOptions(new ContainerOptions<>(container));
+    public void setItems(CollectionContainer<V> container) {
+        setItems(new ContainerDataProvider<>(container));
     }
 
     @Nullable
@@ -163,7 +145,7 @@ public class JmixMultiSelectListBox<V> extends MultiSelectListBox<V> implements 
 
             Collection<V> value;
             try {
-                value = fieldDelegate.convertToModel(presValue, optionsDelegate.getOptions());
+                value = fieldDelegate.convertToModel(presValue, getDataProvider().fetch(new Query<>()));
 
                 setValue(fieldDelegate.convertToPresentation(value));
             } catch (ConversionException e) {
@@ -203,4 +185,13 @@ public class JmixMultiSelectListBox<V> extends MultiSelectListBox<V> implements 
     protected boolean fieldValueEquals(@Nullable Collection<V> value, @Nullable Collection<V> oldValue) {
         return fieldDelegate.equalCollections(value, oldValue);
     }
+
+    protected CollectionFieldDelegate<JmixMultiSelectListBox<V>, V, V> createFieldDelegate() {
+        return applicationContext.getBean(CollectionFieldDelegate.class, this);
+    }
+
+    protected DataViewDelegate<JmixMultiSelectListBox<V>, V> createDataViewDelegate() {
+        return applicationContext.getBean(DataViewDelegate.class, this);
+    }
+
 }
