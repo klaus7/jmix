@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Haulmont.
+ * Copyright 2022 Haulmont.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.jmix.flowui.sys;
 
 import io.jmix.core.DevelopmentException;
@@ -59,8 +60,8 @@ public class XmlInheritanceProcessor {
         extNs = document.getRootElement().getNamespaceForPrefix("ext");
 
         this.targetLocators = Arrays.asList(
-                new ViewPropertyElementTargetLocator(),
-                new ViewElementTargetLocator(),
+                new FetchPlanPropertyElementTargetLocator(),
+                new FetchPlanElementTargetLocator(),
                 new ButtonElementTargetLocator(),
                 new CommonElementTargetLocator()
         );
@@ -235,11 +236,13 @@ public class XmlInheritanceProcessor {
         }
     }
 
-    protected static class ViewElementTargetLocator implements ElementTargetLocator {
+    protected static class FetchPlanElementTargetLocator implements ElementTargetLocator {
+
+        private static final String FETCH_PLAN = "fetchPlan";
 
         @Override
         public boolean suitableFor(Element extElem) {
-            return "view".equals(extElem.getName());
+            return FETCH_PLAN.equals(extElem.getName());
         }
 
         @Nullable
@@ -262,7 +265,7 @@ public class XmlInheritanceProcessor {
             if (extParentElem != null && Objects.equals(resultParentElem.attributeValue("id"),
                     extParentElem.attributeValue("id"))) {
                 for (Element e : resultParentElem.elements()) {
-                    if ("view".equals(e.getName())) {
+                    if (FETCH_PLAN.equals(e.getName())) {
                         return e;
                     }
                 }
@@ -272,7 +275,7 @@ public class XmlInheritanceProcessor {
         }
     }
 
-    protected static class ViewPropertyElementTargetLocator implements ElementTargetLocator {
+    protected static class FetchPlanPropertyElementTargetLocator implements ElementTargetLocator {
 
         @Override
         public boolean suitableFor(Element extElem) {
