@@ -24,5 +24,5 @@ dependencies {
     api project(':multitenancy')
 
     api project(':ui')
-
+    api project(':security-ui')
 }
