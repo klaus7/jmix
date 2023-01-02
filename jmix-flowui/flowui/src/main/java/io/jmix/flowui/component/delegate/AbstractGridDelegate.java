@@ -17,10 +17,8 @@
 package io.jmix.flowui.component.delegate;
 
 import com.google.common.base.Strings;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.GridNoneSelectionModel;
-import com.vaadin.flow.component.grid.GridSelectionModel;
-import com.vaadin.flow.component.grid.GridSortOrder;
+import com.vaadin.flow.component.grid.*;
+import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.data.event.SortEvent;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.provider.SortDirection;
@@ -29,15 +27,23 @@ import com.vaadin.flow.data.selection.SelectionListener;
 import com.vaadin.flow.data.selection.SelectionModel;
 import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.shared.Registration;
+import io.jmix.core.AccessManager;
 import io.jmix.core.MessageTools;
 import io.jmix.core.MetadataTools;
+import io.jmix.core.accesscontext.EntityAttributeContext;
 import io.jmix.core.common.util.Preconditions;
 import io.jmix.core.metamodel.model.MetaClass;
 import io.jmix.core.metamodel.model.MetaProperty;
 import io.jmix.core.metamodel.model.MetaPropertyPath;
 import io.jmix.flowui.UiComponents;
 import io.jmix.flowui.component.ListDataComponent;
-import io.jmix.flowui.data.*;
+import io.jmix.flowui.component.grid.DataGridDataProviderChangeObserver;
+import io.jmix.flowui.component.grid.EnhancedDataGrid;
+import io.jmix.flowui.component.grid.editor.DataGridEditor;
+import io.jmix.flowui.data.BindingState;
+import io.jmix.flowui.data.ContainerDataUnit;
+import io.jmix.flowui.data.EmptyDataUnit;
+import io.jmix.flowui.data.EntityDataUnit;
 import io.jmix.flowui.data.grid.DataGridItems;
 import io.jmix.flowui.data.provider.StringPresentationValueProvider;
 import io.jmix.flowui.kit.component.HasActions;
@@ -50,9 +56,11 @@ import org.springframework.context.ApplicationContextAware;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-public abstract class AbstractGridDelegate<C extends Grid<E> & ListDataComponent<E> & HasActions, E,
-        ITEMS extends DataGridItems<E>>
+public abstract class AbstractGridDelegate<C extends Grid<E> & ListDataComponent<E> & EnhancedDataGrid<E> & HasActions,
+        E, ITEMS extends DataGridItems<E>>
         extends AbstractComponentDelegate<C>
         implements ApplicationContextAware, InitializingBean {
 
@@ -61,11 +69,28 @@ public abstract class AbstractGridDelegate<C extends Grid<E> & ListDataComponent
     protected MetadataTools metadataTools;
     protected MessageTools messageTools;
     protected UiComponents uiComponents;
+    protected AccessManager accessManager;
 
     protected ITEMS dataGridItems;
 
     protected Registration selectionListenerRegistration;
+    protected Registration itemSetChangeRegistration;
+    protected Registration valueChangeRegistration;
+
     protected Set<SelectionListener<Grid<E>, E>> selectionListeners = new HashSet<>();
+    protected Consumer<ColumnSecurityContext<E>> afterColumnSecurityApplyHandler;
+
+    /**
+     * Columns that are bounded with data container (loaded from descriptor or
+     * added using {@link #addColumn(String, MetaPropertyPath)}).
+     */
+    protected Map<Grid.Column<E>, MetaPropertyPath> propertyColumns = new HashMap<>();
+
+    /**
+     * Contains all columns like a Grid and additionally hidden columns by security.
+     * The order of columns corresponds to the client side column order.
+     */
+    protected List<Grid.Column<E>> columns = new ArrayList<>();
 
     public AbstractGridDelegate(C component) {
         super(component);
@@ -86,10 +111,12 @@ public abstract class AbstractGridDelegate<C extends Grid<E> & ListDataComponent
         metadataTools = applicationContext.getBean(MetadataTools.class);
         messageTools = applicationContext.getBean(MessageTools.class);
         uiComponents = applicationContext.getBean(UiComponents.class);
+        accessManager = applicationContext.getBean(AccessManager.class);
     }
 
     protected void initComponent() {
         component.addSortListener(this::onSort);
+        component.addColumnReorderListener(this::onColumnReorderChange);
         addSelectionListener(this::notifyDataProviderSelectionChanged);
     }
 
@@ -109,11 +136,14 @@ public abstract class AbstractGridDelegate<C extends Grid<E> & ListDataComponent
             if (component.getColumns().isEmpty()) {
                 setupAutowiredColumns(dataGridItems);
             }
+
+            applySecurityToPropertyColumns();
         }
     }
 
     protected void bind(DataGridItems<E> dataGridItems) {
-        // do nothing
+        itemSetChangeRegistration = dataGridItems.addItemSetChangeListener(this::itemsItemSetChanged);
+        valueChangeRegistration = dataGridItems.addValueChangeListener(this::itemsValueChanged);
     }
 
     protected void unbind() {
@@ -121,6 +151,65 @@ public abstract class AbstractGridDelegate<C extends Grid<E> & ListDataComponent
             dataGridItems = null;
             setupEmptyDataProvider();
         }
+
+        if (itemSetChangeRegistration != null) {
+            itemSetChangeRegistration.remove();
+            itemSetChangeRegistration = null;
+        }
+
+        if (valueChangeRegistration != null) {
+            valueChangeRegistration.remove();
+            valueChangeRegistration = null;
+        }
+    }
+
+    protected void itemsItemSetChanged(DataGridItems.ItemSetChangeEvent<E> event) {
+        closeEditorIfOpened();
+        component.getDataCommunicator().reset();
+    }
+
+    protected void closeEditorIfOpened() {
+        if (getComponent().isEditorCreated()
+                && getComponent().getEditor().isOpen()) {
+            Editor<E> editor = getComponent().getEditor();
+            if (editor.isBuffered()) {
+                editor.cancel();
+            } else {
+                editor.closeEditor();
+            }
+
+            if (editor instanceof DataGridDataProviderChangeObserver) {
+                ((DataGridDataProviderChangeObserver) editor).dataProviderChanged();
+            }
+        }
+    }
+
+    protected void itemsValueChanged(DataGridItems.ValueChangeEvent<E> event) {
+        if (itemIsBeingEdited(event.getItem())) {
+            DataGridEditor<E> editor = ((DataGridEditor<E>) getComponent().getEditor());
+            // Do not interrupt the save process
+            if (editor.isBuffered() && !editor.isSaving()) {
+                editor.cancel();
+            } else {
+                // In case of unbuffered editor, we don't need to refresh an item,
+                // because it results in row repainting, i.e. all editor components
+                // are recreated and focus lost. In case of buffered editor in a
+                // save process, an item will be refreshed after editor is closed.
+                return;
+            }
+        }
+
+        component.getDataCommunicator().refresh(event.getItem());
+    }
+
+    protected boolean itemIsBeingEdited(E item) {
+        if (getComponent().isEditorCreated()) {
+            Editor<E> editor = getComponent().getEditor();
+            return editor.isOpen()
+                    && Objects.equals(item, editor.getItem());
+        }
+
+        return false;
     }
 
     @Nullable
@@ -167,7 +256,13 @@ public abstract class AbstractGridDelegate<C extends Grid<E> & ListDataComponent
     }
 
     public void enableMultiSelect() {
-        component.setSelectionMode(Grid.SelectionMode.MULTI);
+        setMultiSelect(true);
+    }
+
+    public void setMultiSelect(boolean multiSelect) {
+        component.setSelectionMode(multiSelect
+                ? Grid.SelectionMode.MULTI
+                : Grid.SelectionMode.SINGLE);
     }
 
     public Registration addSelectionListener(SelectionListener<Grid<E>, E> listener) {
@@ -186,7 +281,14 @@ public abstract class AbstractGridDelegate<C extends Grid<E> & ListDataComponent
     }
 
     public Grid.Column<E> addColumn(String key, MetaPropertyPath metaPropertyPath) {
-        return addColumnInternal(key, metaPropertyPath);
+        Grid.Column<E> column = addColumnInternal(key, metaPropertyPath);
+        propertyColumns.put(column, metaPropertyPath);
+        return column;
+    }
+
+    public Grid.Column<E> addColumn(Grid.Column<E> column) {
+        columns.add(column);
+        return column;
     }
 
     protected void setupEmptyDataProvider() {
@@ -232,6 +334,7 @@ public abstract class AbstractGridDelegate<C extends Grid<E> & ListDataComponent
     protected Grid.Column<E> addColumnInternal(String key, MetaPropertyPath metaPropertyPath) {
         ValueProvider<E, ?> valueProvider = getValueProvider(metaPropertyPath);
 
+        // Also it leads to adding column to {@link #columns} list
         Grid.Column<E> column = component.addColumn(valueProvider);
         column.setKey(key);
 
@@ -288,6 +391,20 @@ public abstract class AbstractGridDelegate<C extends Grid<E> & ListDataComponent
         return component.getSelectionModel();
     }
 
+    protected void onColumnReorderChange(ColumnReorderEvent<E> event) {
+        columns = getNewColumnsOrder(event.getColumns());
+    }
+
+    protected List<Grid.Column<E>> getNewColumnsOrder(List<Grid.Column<E>> visibleColumns) {
+        List<Grid.Column<E>> newOrderColumns = new ArrayList<>(visibleColumns);
+        for (Grid.Column<E> column : columns) {
+            if (!newOrderColumns.contains(column)) {
+                newOrderColumns.add(columns.indexOf(column), column);
+            }
+        }
+        return newOrderColumns;
+    }
+
     protected void onSort(SortEvent<Grid<E>, GridSortOrder<E>> event) {
         if (!(dataGridItems instanceof DataGridItems.Sortable)
                 || !(dataGridItems instanceof EntityDataUnit)) {
@@ -334,6 +451,99 @@ public abstract class AbstractGridDelegate<C extends Grid<E> & ListDataComponent
             if (items.containsItem(newItem)) {
                 items.setSelectedItem(newItem);
             }
+        }
+    }
+
+    protected void applySecurityToPropertyColumns() {
+        for (Map.Entry<Grid.Column<E>, MetaPropertyPath> e : propertyColumns.entrySet()) {
+            applySecurityToPropertyColumn(e.getKey(), e.getValue());
+
+            if (afterColumnSecurityApplyHandler != null) {
+                afterColumnSecurityApplyHandler.accept(
+                        new ColumnSecurityContext<>(e.getKey(), e.getValue(),
+                                isPropertyEnabledBySecurity(e.getValue())));
+            }
+        }
+    }
+
+    protected void applySecurityToPropertyColumn(Grid.Column<E> column, MetaPropertyPath metaPropertyPath) {
+        if (!isPropertyEnabledBySecurity(metaPropertyPath)) {
+            column.setVisible(false);
+        }
+    }
+
+    public boolean isPropertyEnabledBySecurity(MetaPropertyPath mpp) {
+        EntityAttributeContext context = new EntityAttributeContext(mpp);
+        accessManager.applyRegisteredConstraints(context);
+        return context.canView();
+    }
+
+    public List<Grid.Column<E>> getColumns() {
+        return List.copyOf(columns);
+    }
+
+    public List<Grid.Column<E>> getVisibleColumns() {
+        return columns.stream()
+                .filter(Grid.Column::isVisible)
+                .collect(Collectors.toList());
+    }
+
+    @Nullable
+    public Grid.Column<E> getColumnByKey(String key) {
+        if (Strings.isNullOrEmpty(key)) {
+            return null;
+        }
+        return columns.stream()
+                .filter(c -> key.equals(c.getKey()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public void removeColumn(Grid.Column<E> column) {
+        columns.remove(column);
+
+        propertyColumns.keySet().remove(column);
+    }
+
+    public boolean isDataGridOwner(Grid.Column<E> column) {
+        return column.getGrid().equals(component)
+                && column.getElement().getParent() != null;
+    }
+
+    @Nullable
+    public Consumer<ColumnSecurityContext<E>> getAfterColumnSecurityApplyHandler() {
+        return afterColumnSecurityApplyHandler;
+    }
+
+    public void setAfterColumnSecurityApplyHandler(
+            @Nullable Consumer<ColumnSecurityContext<E>> afterColumnSecurityApplyHandler) {
+        this.afterColumnSecurityApplyHandler = afterColumnSecurityApplyHandler;
+    }
+
+    public static class ColumnSecurityContext<E> {
+
+        protected Grid.Column<E> column;
+        protected MetaPropertyPath metaPropertyPath;
+        protected Boolean propertyEnabled;
+
+        public ColumnSecurityContext(Grid.Column<E> column,
+                                     MetaPropertyPath metaPropertyPath,
+                                     Boolean propertyEnabled) {
+            this.column = column;
+            this.metaPropertyPath = metaPropertyPath;
+            this.propertyEnabled = propertyEnabled;
+        }
+
+        public Grid.Column<E> getColumn() {
+            return column;
+        }
+
+        public MetaPropertyPath getMetaPropertyPath() {
+            return metaPropertyPath;
+        }
+
+        public Boolean isPropertyEnabled() {
+            return propertyEnabled;
         }
     }
 }

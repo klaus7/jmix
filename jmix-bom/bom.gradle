@@ -61,14 +61,14 @@ publishing {
 group = 'io.jmix.bom'
 
 def vaadinVersion = '8.14.3-0-jmix'
-def vaadinFlowVersion = '23.1.7'
+def vaadinFlowVersion = '23.3.0'
 
 javaPlatform {
     allowDependencies()
 }
 
 dependencies {
-    api platform("org.springframework.boot:spring-boot-dependencies:2.7.4")
+    api platform("org.springframework.boot:spring-boot-dependencies:2.7.6")
     api platform('software.amazon.awssdk:bom:2.16.69')
 
     def freeVersion = version
@@ -236,12 +236,16 @@ dependencies {
         api "io.jmix.sessions:jmix-sessions:$freeVersion"
         api "io.jmix.sessions:jmix-sessions-starter:$freeVersion"
 
+        api "io.jmix.templates.studio:jmix-studio-templates:$freeVersion"
+
         api "io.jmix.translations:jmix-translations-fr:$freeVersion"
         api "io.jmix.translations:jmix-translations-ru:$freeVersion"
         api "io.jmix.translations:jmix-translations-de:$freeVersion"
         api "io.jmix.translations:jmix-translations-zh-cn:$freeVersion"
         api "io.jmix.translations:jmix-translations-ro:$freeVersion"
         api "io.jmix.translations:jmix-translations-el:$freeVersion"
+        api "io.jmix.translations:jmix-translations-ckb:$freeVersion"
+        api "io.jmix.translations:jmix-translations-nl:$freeVersion"
 
         api "io.jmix.ui:jmix-ui:$freeVersion"
         api "io.jmix.ui:jmix-ui-data:$freeVersion"
@@ -301,9 +305,9 @@ dependencies {
         api "com.vaadin:vaadin-core:$vaadinFlowVersion"
         api "com.vaadin:vaadin-bom:$vaadinFlowVersion"
 
-        api 'org.webjars:ace-builds:1.1.9-1-cuba'
+        api 'org.webjars:ace-builds:1.1.9.jmix.1'
         api 'org.webjars:bootstrap:4.5.3-0-jmix'
-        api 'org.webjars:diff-match-patch:0.1.cuba.1'
+        api 'org.webjars:diff-match-patch:0.1.jmix.1'
         api 'org.webjars:jquery:3.6.0'
         api 'org.webjars:jquery-ui:1.13.0'
         api 'org.webjars.bower:jquery-file-upload:9.22.0.cuba.0'
@@ -362,7 +366,7 @@ dependencies {
 
         api 'com.amazonaws:aws-java-sdk-core:1.11.1034'
 
-        def yargVersion = '2.2.18'
+        def yargVersion = '2.2.19'
         api "com.haulmont.yarg:yarg-api:$yargVersion"
         api "com.haulmont.yarg:yarg:$yargVersion"
 

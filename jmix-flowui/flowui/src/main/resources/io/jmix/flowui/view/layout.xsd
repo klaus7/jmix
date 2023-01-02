@@ -1564,6 +1564,26 @@
         </xs:union>
     </xs:simpleType>
 
+    <xs:simpleType name="tabSheetThemeNames">
+        <xs:union>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="icon-on-top"/>
+                    <xs:enumeration value="centered"/>
+                    <xs:enumeration value="small"/>
+                    <xs:enumeration value="minimal"/>
+                    <xs:enumeration value="hide-scroll-buttons"/>
+                    <xs:enumeration value="equal-width-tabs"/>
+                    <xs:enumeration value="bordered"/>
+                    <xs:enumeration value="fixed"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:union>
+    </xs:simpleType>
+
     <xs:simpleType name="buttonThemeNames">
         <xs:union>
             <xs:simpleType>
@@ -1875,6 +1895,19 @@
             </xs:complexContent>
     </xs:complexType>
 
+    <xs:complexType name="baseTabsComponent">
+        <xs:complexContent>
+            <xs:extension base="baseComponent">
+                <xs:sequence minOccurs="0" maxOccurs="unbounded">
+                    <xs:element name="tab" type="tabComponent"/>
+                </xs:sequence>
+
+                <xs:attributeGroup ref="hasClassNames"/>
+                <xs:attributeGroup ref="hasSize"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
     <xs:complexType name="securityConstraintAction">
         <xs:complexContent>
             <xs:extension base="baseAction">
@@ -2035,13 +2068,42 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <!-- GridColumn-->
+    <xs:complexType name="gridEditorButtonType">
+        <xs:attributeGroup ref="hasText"/>
+        <xs:attributeGroup ref="hasIcon"/>
+        <xs:attributeGroup ref="hasTitle"/>
+        <xs:attributeGroup ref="hasClassNames"/>
+
+        <xs:attribute name="themeNames" type="buttonThemeNames"/>
+        <xs:attribute name="iconAfterText" type="xs:boolean"/>
+    </xs:complexType>
+
+    <!--Grid.EditorActionsColumn-->
+    <xs:complexType name="dataGridEditorActionsColumn">
+        <xs:sequence>
+            <xs:element name="editButton" minOccurs="1" type="gridEditorButtonType"/>
+            <xs:element name="saveButton" minOccurs="0" type="gridEditorButtonType"/>
+            <xs:element name="closeButton" minOccurs="0" type="gridEditorButtonType"/>
+            <xs:element name="cancelButton" minOccurs="0" type="gridEditorButtonType"/>
+        </xs:sequence>
+
+        <xs:attribute name="key" type="xs:string"/>
+        <xs:attribute name="width" type="xs:string"/>
+        <xs:attribute name="autoWidth" type="xs:boolean"/>
+        <xs:attribute name="resizable" type="xs:boolean"/>
+        <xs:attribute name="flexGrow" type="xs:integer"/>
+        <xs:attribute name="header" type="resourceString"/>
+        <xs:attribute name="footer" type="resourceString"/>
+        <xs:attribute name="visible" type="xs:boolean"/>
+    </xs:complexType>
+
+    <!-- Grid.Column-->
     <xs:complexType name="dataGridColumnComponent">
         <xs:attribute name="key" type="xs:string"/>
         <xs:attribute name="visible" type="xs:boolean"/>
         <xs:attribute name="width" type="xs:string"/>
-        <xs:attribute name="header" type="xs:string"/>
-        <xs:attribute name="footer" type="xs:string"/>
+        <xs:attribute name="header" type="resourceString"/>
+        <xs:attribute name="footer" type="resourceString"/>
         <xs:attribute name="frozen" type="xs:boolean"/>
         <xs:attribute name="property" type="xs:string"/>
         <xs:attribute name="sortable" type="xs:boolean"/>
@@ -2049,8 +2111,8 @@
         <xs:attribute name="resizable" type="xs:boolean"/>
         <xs:attribute name="autoWidth" type="xs:boolean"/>
         <xs:attribute name="textAlign" type="gridColumnTextAlignEnum"/>
+        <xs:attribute name="editable" type="xs:boolean"/>
     </xs:complexType>
-
 
     <!-- DataGrid -->
     <xs:complexType name="dataGridComponent">
@@ -2070,6 +2132,7 @@
                         <xs:complexType>
                             <xs:sequence>
                                 <xs:element name="column" maxOccurs="unbounded" type="dataGridColumnComponent"/>
+                                <xs:element name="editorActionsColumn" type="dataGridEditorActionsColumn"/>
                             </xs:sequence>
                             <xs:attributeGroup ref="columnsLoadType"/>
                         </xs:complexType>
@@ -2084,6 +2147,7 @@
                 <xs:attribute name="themeNames" type="gridThemeNames"/>
                 <xs:attribute name="dataContainer" type="xs:string"/>
                 <xs:attribute name="allRowsVisible" type="xs:boolean"/>
+                <xs:attribute name="editorBuffered" type="xs:boolean"/>
                 <xs:attribute name="selectionMode" type="gridSelectionMode"/>
                 <xs:attribute name="detailsVisibleOnClick" type="xs:boolean"/>
                 <xs:attribute name="columnReorderingAllowed" type="xs:boolean"/>
@@ -2103,6 +2167,7 @@
         <xs:complexContent>
             <xs:extension base="dataGridComponent">
                 <xs:attribute name="hierarchyProperty" type="xs:string" use="required"/>
+                <xs:attribute name="hierarchyColumn" type="xs:string"/>
                 <xs:attribute name="showOrphans" type="xs:boolean"/>
             </xs:extension>
         </xs:complexContent>
@@ -2285,6 +2350,7 @@
                 <xs:attribute name="preventInvalidInput" type="xs:boolean"/>
                 <xs:attribute name="itemsEnum" type="xs:string"/>
 
+                <xs:attributeGroup ref="hasTitle"/>
                 <xs:attributeGroup ref="hasRequired"/>
                 <xs:attributeGroup ref="hasPlaceholder"/>
             </xs:extension>
@@ -2604,35 +2670,35 @@
     <!-- Tabs-->
     <xs:complexType name="tabsContainer">
         <xs:complexContent>
-            <xs:extension base="baseComponent">
-
-                <!-- Tab-->
-                <xs:sequence minOccurs="0" maxOccurs="unbounded">
-                    <xs:element name="tab">
-                        <xs:complexType>
-                            <xs:complexContent>
-                                <xs:extension base="baseComponent">
-                                    <xs:group ref="singleLayoutOrComponent"/>
-
-                                    <xs:attribute name="themeNames" type="tabThemeNames"/>
-                                    <xs:attribute name="flexGrow" type="xs:double"/>
-
-                                    <xs:attributeGroup ref="hasLabel"/>
-                                    <xs:attributeGroup ref="hasEnabled"/>
-                                    <xs:attributeGroup ref="hasClassNames"/>
-                                </xs:extension>
-                            </xs:complexContent>
-                        </xs:complexType>
-                    </xs:element>
-                </xs:sequence>
-
-                <xs:attributeGroup ref="hasClassNames"/>
-                <xs:attributeGroup ref="hasSize"/>
+            <xs:extension base="baseTabsComponent">
+                <xs:attribute name="orientation" type="orientationType"/>
 
                 <xs:attribute name="themeNames" type="tabsThemeNames"/>
-                <xs:attribute name="orientation" type="orientationType"/>
             </xs:extension>
         </xs:complexContent>
+    </xs:complexType>
+
+    <!-- TabSheet-->
+    <xs:complexType name="tabSheetComponent">
+        <xs:complexContent>
+            <xs:extension base="baseTabsComponent">
+                <xs:attribute name="themeNames" type="tabSheetThemeNames"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- Tab-->
+    <xs:complexType name="tabComponent">
+        <xs:group ref="singleLayoutOrComponent"/>
+
+        <xs:attribute name="themeNames" type="tabThemeNames"/>
+        <xs:attribute name="flexGrow" type="xs:double"/>
+        <xs:attribute name="visible" type="xs:boolean"/>
+
+        <xs:attributeGroup ref="requiresId"/>
+        <xs:attributeGroup ref="hasLabel"/>
+        <xs:attributeGroup ref="hasEnabled"/>
+        <xs:attributeGroup ref="hasClassNames"/>
     </xs:complexType>
 
     <!-- Select-->
@@ -2853,6 +2919,15 @@
         </xs:complexContent>
     </xs:complexType>
 
+    <!-- Label-->
+    <xs:complexType name="labelComponent">
+        <xs:complexContent>
+            <xs:extension base="baseHtmlContainer">
+                <xs:attribute name="setFor" type="xs:string"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
 
     <!-- Facets -->
 
@@ -2963,6 +3038,7 @@
                 <xs:element name="aside" type="baseHtmlContainer"/>
                 <xs:element name="emphasis" type="baseHtmlContainer"/>
                 <xs:element name="anchor" type="anchor"/>
+                <xs:element name="label" type="labelComponent"/>
                 <xs:element name="article" type="baseHtmlContainer"/>
                 <xs:element name="input" type="inputHtmlComponent"/>
                 <xs:element name="image" type="imageHtmlComponent"/>
@@ -3018,6 +3094,7 @@
                 <xs:element name="loginForm" type="loginFormComponent"/>
                 <xs:element name="loginOverlay" type="loginOverlayComponent"/>
                 <xs:element name="simplePagination" type="simplePaginationComponent"/>
+                <xs:element name="tabSheet" type="tabSheetComponent"/>
             </xs:choice>
         </xs:sequence>
     </xs:group>

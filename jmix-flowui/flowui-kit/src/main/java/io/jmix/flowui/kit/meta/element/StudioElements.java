@@ -79,7 +79,7 @@ public interface StudioElements {
     @StudioElement(
             name = "Tab",
             classFqn = "com.vaadin.flow.component.tabs.Tab",
-            target = {"com.vaadin.flow.component.tabs.Tabs"},
+            target = {"com.vaadin.flow.component.tabs.Tabs", "com.vaadin.flow.component.tabs.TabSheet"},
             xmlElement = "tab",
             visible = true,
             properties = {
@@ -87,7 +87,7 @@ public interface StudioElements {
                     @StudioProperty(xmlAttribute = "colspan", type = StudioPropertyType.INTEGER),
                     @StudioProperty(xmlAttribute = "enabled", type = StudioPropertyType.BOOLEAN),
                     @StudioProperty(xmlAttribute = "flewGrow", type = StudioPropertyType.DOUBLE),
-                    @StudioProperty(xmlAttribute = "id", type = StudioPropertyType.COMPONENT_ID),
+                    @StudioProperty(xmlAttribute = "id", type = StudioPropertyType.COMPONENT_ID, required = true),
                     @StudioProperty(xmlAttribute = "label", type = StudioPropertyType.LOCALIZED_STRING),
                     @StudioProperty(xmlAttribute = "themeNames", type = StudioPropertyType.VALUES_LIST,
                             options = {"icon-on-top"}),
@@ -148,7 +148,9 @@ public interface StudioElements {
                             options = {"CENTER", "END", "START"}),
                     @StudioProperty(xmlAttribute = "visible", type = StudioPropertyType.BOOLEAN,
                             defaultValue = "true"),
-                    @StudioProperty(xmlAttribute = "width", type = StudioPropertyType.SIZE, defaultValue = "100px")
+                    @StudioProperty(xmlAttribute = "width", type = StudioPropertyType.SIZE, defaultValue = "100px"),
+                    @StudioProperty(xmlAttribute = "editable", type = StudioPropertyType.BOOLEAN,
+                            defaultValue = "false")
             }
     )
     Grid.Column column();
